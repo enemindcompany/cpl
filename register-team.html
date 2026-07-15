@@ -12,7 +12,7 @@
 <main>
   <span class="eyebrow">Registration</span>
   <h1>Register a Team</h1>
-  <p>Registration fee: <strong>KES 6000</strong>. Pay via M-Pesa first, then submit this form with your Payment Ref. An admin will confirm payment and add your squad to League A or League B listings.</p>
+  <p>Registration fee: <strong>KES 6000</strong>. Pay via M-Pesa first, then submit this form with your Payment Ref. You can upload your team logo now to save the admin a step, or add one later — either way, an admin will confirm payment and add your squad to League A or League B listings.</p>
 
   <div class="panel">
     <form id="team-register-form">
@@ -34,6 +34,10 @@
 
       <label for="tf-contact-phone">Contact Phone</label>
       <input id="tf-contact-phone" name="Contact Phone" type="tel" required autocomplete="tel">
+
+      <label for="tf-logo">Team Logo <span class="opt">(optional — PNG or JPG)</span></label>
+      <input id="tf-logo" name="Logo" type="file" accept="image/*">
+      <div class="logo-preview-wrap"><img id="tf-logo-preview" class="logo-preview"></div>
 
       <label for="tf-payment">M-Pesa Payment Ref</label>
       <input id="tf-payment" name="Payment Ref" type="text" required placeholder="e.g. QGH7X2K9LP">

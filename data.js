@@ -9,7 +9,7 @@ const CPL_CONFIG = {
   SHEET_ID: '1rLuEFCH1pXp5r0PQkVwLbfrurG8kLVUrUm0QwaVC9E8',
 
   // Apps Script web app /exec URL (from Deploy > New deployment > Web app)
-  APPS_SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbxb3Su7y5gMg1v5s8YQapFi9R_mXv4A4tZ_YYMwy0l4sTrHqLdW2vc2XZXkRRVzvGVmiQ/exec',
+  APPS_SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbzDrp3xFjR6vCDZlQNP3T5woBLADp7Kf_63ZsmK3o7NskISUfprRpkyphNXGFABrIpjXA/exec',
 
   // Shown in the header and used for CPL number prefixes
   SEASON: '2026'
@@ -124,6 +124,17 @@ function cplEl(html) {
 function cplShowMsg(el, text, kind) {
   el.textContent = text;
   el.className = 'msg show ' + (kind || 'ok');
+}
+
+/** Reads a File (e.g. from a file input) as a base64 data URL. Shared by
+ * player photo upload (profile-edit.js) and team logo upload (registrations.js). */
+function cplFileToBase64(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
 }
 
 /** Parses dates like "2026-08-15" or "15/08/2026" reasonably well for sorting. */

@@ -131,6 +131,18 @@ function initTeamRegisterForm() {
   const submitBtn = document.getElementById('team-register-submit');
   if (!form) return;
 
+  const logoInput = form.elements['Logo'];
+  const logoPreview = document.getElementById('tf-logo-preview');
+  if (logoInput && logoPreview) {
+    logoInput.addEventListener('change', () => {
+      const file = logoInput.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = () => { logoPreview.src = reader.result; logoPreview.style.display = 'block'; };
+      reader.readAsDataURL(file);
+    });
+  }
+
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
     cplClearMessage(msg);
@@ -152,6 +164,10 @@ function initTeamRegisterForm() {
       contactPhone: form.elements['Contact Phone'].value.trim(),
       paymentRef: form.elements['Payment Ref'].value.trim(),
     };
+
+    if (logoInput && logoInput.files[0]) {
+      payload.logoBase64 = await cplFileToBase64(logoInput.files[0]);
+    }
 
     cplSetSubmitting(submitBtn, true, 'Register Team');
     try {
