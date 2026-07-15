@@ -52,30 +52,65 @@ function initPlayerRegisterForm() {
 
   // Populate the team dropdown from both leagues so a new player picks
   // an existing team name exactly as it appears in Teams_A / Teams_B.
+  // Populate the team dropdown from Team_Registrations — this site keeps
+  // all team data in that one tab rather than separate Teams_A / Teams_B
+  // tabs, so a new player picks from teams that have been submitted and
+  // are not still sitting as "Pending" (same convention referees.js uses:
+  // rows with no Status at all stay visible, for older entries).
   (async function loadTeams() {
     const select = form.elements['Team'];
     try {
-      const [teamsA, teamsB] = await Promise.all([CPL.get('Teams_A'), CPL.get('Teams_B')]);
-      const names = [...teamsA, ...teamsB]
-        .map(r => (r['Name'] || '').trim())
-        .filter(Boolean)
-        .sort((a, b) => a.localeCompare(b));
-      for (const name of names) {
+      const rows = await CPL.get('Team_Registrations');
+      const approved = rows.filter(r => (r.Status || '').trim().toLowerCase() !== 'pending');
+
+      const seen = new Set();
+      const teams = [];
+      approved.forEach(r => {
+        const name = (r['Team'] || '').trim();
+        if (!name || seen.has(name)) return;
+        seen.add(name);
+        teams.push({ name, league: (r['League'] || '').trim() });
+      });
+      teams.sort((a, b) => a.name.localeCompare(b.name));
+
+      if (!teams.length) {
+        const note = document.createElement('option');
+        note.value = '';
+        note.textContent = 'No approved teams yet — contact admin';
+        select.appendChild(note);
+        return;
+      }
+
+      for (const t of teams) {
         const opt = document.createElement('option');
-        opt.value = name;
-        opt.textContent = name;
+        opt.value = t.name;
+        opt.textContent = t.league ? `${t.name} (League ${t.league})` : t.name;
         select.appendChild(opt);
       }
     } catch (err) {
-      console.error('Could not load teams for registration form', err);
-      // Non-fatal — the player can still type a team name isn't possible
-      // with a <select>, so leave a note instead of blocking the form.
+      // The real reason (bad SHEET_ID, sheet not shared, missing tab,
+      // etc.) is in err.message — log it so it's visible in the browser
+      // console instead of only showing a generic note.
+      console.error('Could not load Team_Registrations for registration form:', err);
       const note = document.createElement('option');
       note.value = '';
-      note.textContent = 'Could not load team list — contact admin';
+      note.textContent = 'Could not load team list — see browser console for details';
       select.appendChild(note);
     }
   })();
+
+  // Live preview for the optional photo upload
+  const photoInput = form.elements['Photo'];
+  const photoPreview = document.getElementById('pf-photo-preview');
+  if (photoInput && photoPreview) {
+    photoInput.addEventListener('change', () => {
+      const file = photoInput.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = () => { photoPreview.src = reader.result; photoPreview.style.display = 'block'; };
+      reader.readAsDataURL(file);
+    });
+  }
 
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
@@ -103,12 +138,28 @@ function initPlayerRegisterForm() {
       paymentRef: form.elements['Payment Ref'].value.trim(),
     };
 
+    // Photo is optional at registration time — compress it client-side
+    // (see cplCompressImage in data.js) before sending so it uploads fast.
+    if (photoInput && photoInput.files[0]) {
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Processing photo…';
+      try {
+        payload.photoBase64 = await cplCompressImage(photoInput.files[0], { maxDimension: 800, quality: 0.85 });
+      } catch (err) {
+        cplShowMessage(msg, err.message || 'Could not process that photo.', 'error');
+        cplSetSubmitting(submitBtn, false, 'Register');
+        return;
+      }
+    }
+
     cplSetSubmitting(submitBtn, true, 'Register');
     try {
       const res = await CPL.post(payload);
       if (res && res.ok) {
         form.reset();
-        cplShowMessage(msg, 'Registration received. Your CPL number and profile will be activated once your payment is confirmed by an admin.', 'success');
+        if (photoPreview) photoPreview.style.display = 'none';
+        const base = 'Registration received. Your CPL number and profile will be activated once your payment is confirmed by an admin.';
+        cplShowMessage(msg, res.warning ? base + res.warning : base, 'success');
       } else {
         cplShowMessage(msg, (res && res.error) || 'Something went wrong submitting your registration. Please try again.', 'error');
       }

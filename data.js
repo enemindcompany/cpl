@@ -9,7 +9,7 @@ const CPL_CONFIG = {
   SHEET_ID: '1rLuEFCH1pXp5r0PQkVwLbfrurG8kLVUrUm0QwaVC9E8',
 
   // Apps Script web app /exec URL (from Deploy > New deployment > Web app)
-  APPS_SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbxyFOAk9ISfMmI245kP6invc77NBhRg2euHz6k7Alf26K5S8mkstbap2mTG3q1UWpuzsg/exec',
+  APPS_SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbzDrp3xFjR6vCDZlQNP3T5woBLADp7Kf_63ZsmK3o7NskISUfprRpkyphNXGFABrIpjXA/exec',
 
   // Shown in the header and used for CPL number prefixes
   SEASON: '2026'
@@ -66,9 +66,30 @@ function cplRowsToObjects(rows) {
 }
 
 async function cplFetchTab(tabName) {
-  const res = await fetch(cplSheetCsvUrl(tabName));
-  if (!res.ok) throw new Error('Could not load "' + tabName + '" from the Sheet.');
+  let res;
+  try {
+    res = await fetch(cplSheetCsvUrl(tabName));
+  } catch (err) {
+    // Network/CORS failure — fetch never got a response at all.
+    throw new Error('Could not reach the Sheet for "' + tabName + '" (network/CORS error). Check your connection.');
+  }
+
+  if (!res.ok) {
+    throw new Error('Could not load "' + tabName + '" from the Sheet (HTTP ' + res.status + '). ' +
+      'Check that the Sheet is shared as "Anyone with the link — Viewer" and that a tab named exactly "' + tabName + '" exists.');
+  }
+
   const text = await res.text();
+
+  // A shared-but-not-quite-right Sheet (e.g. link sharing off) doesn't
+  // always 404 — it can 200 with an HTML sign-in/error page instead of
+  // CSV. Catch that case explicitly instead of silently mis-parsing HTML
+  // as if it were data rows.
+  if (/^\s*<(!DOCTYPE|html)/i.test(text)) {
+    throw new Error('"' + tabName + '" did not return CSV data — the Sheet is probably not shared as ' +
+      '"Anyone with the link — Viewer", or the SHEET_ID in data.js is wrong.');
+  }
+
   return cplRowsToObjects(cplParseCsv(text));
 }
 
