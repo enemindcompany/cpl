@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Player Login — Chuka Premier League</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div id="site-header"></div>
+
+<main class="narrow">
+  <span class="eyebrow">Player Login</span>
+  <h1>Sign In</h1>
+  <p>Sign in with the email and password you set when you registered to edit your bio, upload a photo, or download your player card.</p>
+
+  <div class="panel" id="login-panel"></div>
+
+  <p style="margin-top:20px;">Not sure which profile is yours? Browse the <a href="players.html">players directory</a> and open your profile — the edit form appears automatically once you're signed in.</p>
+</main>
+
+<div id="site-footer"></div>
+
+<script src="data.js"></script>
+<script src="layout.js"></script>
+<script src="auth.js"></script>
+<script>
+  mountLayout('login.html');
+  initLoginForm('login-panel');
+</script>
+</body>
+</html>

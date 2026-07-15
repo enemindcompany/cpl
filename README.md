@@ -1,1 +1,1 @@
-# cpl
+# chuka-premier-league

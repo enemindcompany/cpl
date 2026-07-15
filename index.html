@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Chuka Premier League</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div id="site-header"></div>
+
+<main>
+  <span class="eyebrow">Season 2026</span>
+  <h1>Chuka Premier League</h1>
+  <p>Fixtures, standings, player profiles, and everything else — all pulled live from the league's Google Sheet.</p>
+
+  <div class="card-grid">
+    <a class="card" href="league-a.html">
+      <h3>League A</h3>
+      <p>Standings, fixtures &amp; top scorers</p>
+    </a>
+    <a class="card" href="league-b.html">
+      <h3>League B</h3>
+      <p>Standings, fixtures &amp; top scorers</p>
+    </a>
+    <a class="card" href="players.html">
+      <h3>Players Directory</h3>
+      <p>Search every registered player</p>
+    </a>
+    <a class="card" href="gallery.html">
+      <h3>Gallery</h3>
+      <p>Photos &amp; videos from matchdays</p>
+    </a>
+    <a class="card" href="news.html">
+      <h3>News</h3>
+      <p>Latest league announcements</p>
+    </a>
+    <a class="card" href="referees.html">
+      <h3>Referees</h3>
+      <p>Registered match officials</p>
+    </a>
+  </div>
+
+  <div class="panel" style="margin-top:24px;">
+    <span class="eyebrow">Latest News</span>
+    <div id="home-news"></div>
+  </div>
+</main>
+
+<div id="site-footer"></div>
+
+<script src="data.js"></script>
+<script src="layout.js"></script>
+<script>
+  mountLayout('index.html');
+
+  (async function loadHomeNews() {
+    const root = document.getElementById('home-news');
+    try {
+      const news = await CPL.get('News');
+      const latest = [...news].sort((a, b) => cplParseDate(b.Date) - cplParseDate(a.Date)).slice(0, 3);
+      root.innerHTML = latest.length
+        ? latest.map(n => `
+            <div style="margin-bottom:16px;">
+              <span class="eyebrow" style="margin-bottom:2px;">${cplEscape(n.Date)}</span>
+              <h3 style="margin-bottom:4px;">${cplEscape(n.Title)}</h3>
+              <p>${cplEscape((n.Body || '').slice(0, 180))}${(n.Body || '').length > 180 ? '…' : ''}</p>
+            </div>`).join('') + '<a class="btn secondary" href="news.html">All news</a>'
+        : '<p class="empty">No news yet.</p>';
+    } catch (err) {
+      root.innerHTML = `<p class="empty">Could not load news. ${cplEscape(err.message)}</p>`;
+    }
+  })();
+</script>
+</body>
+</html>
