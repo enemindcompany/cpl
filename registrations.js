@@ -166,7 +166,15 @@ function initTeamRegisterForm() {
     };
 
     if (logoInput && logoInput.files[0]) {
-      payload.logoBase64 = await cplFileToBase64(logoInput.files[0]);
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Processing logo…';
+      try {
+        payload.logoBase64 = await cplCompressImage(logoInput.files[0], { maxDimension: 800, quality: 0.85 });
+      } catch (err) {
+        cplShowMessage(msg, err.message || 'Could not process that logo image.', 'error');
+        cplSetSubmitting(submitBtn, false, 'Register Team');
+        return;
+      }
     }
 
     cplSetSubmitting(submitBtn, true, 'Register Team');

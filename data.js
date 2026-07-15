@@ -9,7 +9,7 @@ const CPL_CONFIG = {
   SHEET_ID: '1rLuEFCH1pXp5r0PQkVwLbfrurG8kLVUrUm0QwaVC9E8',
 
   // Apps Script web app /exec URL (from Deploy > New deployment > Web app)
-  APPS_SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbwygLN_1KfTJ80-_ZPIxeu5u2jw69_GEM8os7cKNEiRy_riMQ4DXyRds8-l7IIJDiQKsQ/exec',
+  APPS_SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbzDrp3xFjR6vCDZlQNP3T5woBLADp7Kf_63ZsmK3o7NskISUfprRpkyphNXGFABrIpjXA/exec',
 
   // Shown in the header and used for CPL number prefixes
   SEASON: '2026'
@@ -133,6 +133,73 @@ function cplFileToBase64(file) {
     const reader = new FileReader();
     reader.onload = () => resolve(reader.result);
     reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+/**
+ * Reads an image File, downscales it to fit within maxDimension on its
+ * longest side, and re-encodes as JPEG at the given quality — returned
+ * as a base64 data URL ready to POST to the Apps Script backend.
+ *
+ * This exists because raw phone-camera photos are routinely 5-12MB.
+ * Base64 encoding inflates that by ~33%, and posting that much text to
+ * an Apps Script web app is the single most common reason uploads on
+ * this site "hang" or silently fail (slow connections time out, and
+ * Apps Script itself has execution/payload limits). Shrinking the image
+ * client-side, before it's ever base64'd, keeps uploads fast and
+ * reliable and keeps photos/logos a consistent size.
+ *
+ * Rejects if the file isn't an image or is implausibly large (>25MB)
+ * before even trying to decode it, so the caller can show a clear error
+ * instead of the browser hanging on a huge image decode.
+ */
+function cplCompressImage(file, opts = {}) {
+  const maxDimension = opts.maxDimension || 1000;
+  const quality = opts.quality || 0.82;
+  const maxSourceBytes = 25 * 1024 * 1024; // 25MB sanity cap on the *original* file
+
+  return new Promise((resolve, reject) => {
+    if (!file.type || !file.type.startsWith('image/')) {
+      reject(new Error('Please choose an image file (JPG, PNG, etc).'));
+      return;
+    }
+    if (file.size > maxSourceBytes) {
+      reject(new Error('That image is too large (max 25MB). Try a smaller photo.'));
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onerror = () => reject(new Error('Could not read that file.'));
+    reader.onload = () => {
+      const img = new Image();
+      img.onerror = () => reject(new Error('Could not read that image — try a different file.'));
+      img.onload = () => {
+        let { width, height } = img;
+        if (width > maxDimension || height > maxDimension) {
+          if (width >= height) {
+            height = Math.round(height * (maxDimension / width));
+            width = maxDimension;
+          } else {
+            width = Math.round(width * (maxDimension / height));
+            height = maxDimension;
+          }
+        }
+
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        // Flatten transparency onto white so PNG logos with alpha don't
+        // turn black when re-encoded as JPEG.
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, width, height);
+        ctx.drawImage(img, 0, 0, width, height);
+
+        resolve(canvas.toDataURL('image/jpeg', quality));
+      };
+      img.src = reader.result;
+    };
     reader.readAsDataURL(file);
   });
 }

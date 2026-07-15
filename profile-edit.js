@@ -40,19 +40,28 @@ function initProfileEdit(containerEl, currentBio) {
 
     const btn = containerEl.querySelector('#edit-save-btn');
     btn.disabled = true;
-    btn.textContent = 'Saving…';
 
-    try {
-      const payload = {
-        action: 'profileEdit',
-        email: session.email,
-        password: session.password,
-        bio: containerEl.querySelector('#edit-bio').value
-      };
-      if (fileInput.files[0]) {
-        payload.photoBase64 = await cplFileToBase64(fileInput.files[0]);
+    const payload = {
+      action: 'profileEdit',
+      email: session.email,
+      password: session.password,
+      bio: containerEl.querySelector('#edit-bio').value
+    };
+
+    if (fileInput.files[0]) {
+      btn.textContent = 'Processing photo…';
+      try {
+        payload.photoBase64 = await cplCompressImage(fileInput.files[0], { maxDimension: 800, quality: 0.85 });
+      } catch (err) {
+        cplShowMsg(msg, err.message || 'Could not process that photo.', 'err');
+        btn.disabled = false;
+        btn.textContent = 'Save Changes';
+        return;
       }
+    }
 
+    btn.textContent = 'Saving…';
+    try {
       const result = await CPL.post(payload);
       if (result.ok) {
         cplShowMsg(msg, 'Saved! Refresh the page to see your changes.', 'ok');
