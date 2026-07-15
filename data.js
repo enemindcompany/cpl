@@ -9,7 +9,7 @@ const CPL_CONFIG = {
   SHEET_ID: '1rLuEFCH1pXp5r0PQkVwLbfrurG8kLVUrUm0QwaVC9E8',
 
   // Apps Script web app /exec URL (from Deploy > New deployment > Web app)
-  APPS_SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbzDrp3xFjR6vCDZlQNP3T5woBLADp7Kf_63ZsmK3o7NskISUfprRpkyphNXGFABrIpjXA/exec',
+  APPS_SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbwygLN_1KfTJ80-_ZPIxeu5u2jw69_GEM8os7cKNEiRy_riMQ4DXyRds8-l7IIJDiQKsQ/exec',
 
   // Shown in the header and used for CPL number prefixes
   SEASON: '2026'
